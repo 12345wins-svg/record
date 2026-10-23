@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>GalaxyBook 24시간 카메라 녹화</title>
+  <style>
+    :root{--bg:#f3f6fb;--card:#fff;--ink:#15243b;--muted:#627187;--line:#e1e8f2;--blue:#2767dc;--bluelight:#eaf1ff;--red:#bd303c;--green:#167c5d}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:"Malgun Gothic","Segoe UI",Arial,sans-serif;color:var(--ink);line-height:1.5}
+    .wrap{max-width:1200px;margin:0 auto;padding:27px 22px 45px}.top{display:flex;justify-content:space-between;align-items:center;gap:15px;margin:0 0 25px;flex-wrap:wrap}
+    .brand{display:flex;align-items:center;gap:12px}.logo{display:grid;place-items:center;background:var(--blue);color:white;border-radius:13px;width:44px;height:44px;font-size:25px}
+    h1{font-size:24px;line-height:1.2;margin:0;letter-spacing:-.7px}.desc{font-size:13px;color:var(--muted);margin:6px 0 0}.pill{border:1px solid #d1ddeb;border-radius:999px;padding:8px 13px;background:#fff;font-weight:700;font-size:13px}
+    .pill.live{background:#e6f6f0;color:var(--green);border-color:#b0dfca}.pill.problem{background:#fbe9ec;color:var(--red);border-color:#f0c3c9}
+    .layout{display:grid;grid-template-columns: minmax(0,1fr) 350px;gap:18px}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:0 6px 24px rgba(19,46,83,.03);margin-bottom:18px}
+    h2{font-size:17px;margin:0 0 18px;letter-spacing:-.3px}.sub{font-size:12px;color:var(--muted);font-weight:400}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.field.full{grid-column:1/-1}
+    label{display:block;font-size:13px;font-weight:700;margin-bottom:7px}input,select{width:100%;height:43px;border:1px solid #ccd7e4;border-radius:9px;padding:0 12px;background:#fff;font-family:inherit;font-size:14px;color:var(--ink)}
+    input:focus,select:focus{outline:2px solid #adc9ff;border-color:#6a9bff}input:disabled,select:disabled{background:#f2f5f9;color:#8190a1}
+    .hint{margin:6px 0 0;color:var(--muted);font-size:12px}.inline{display:flex;gap:8px}.inline input{flex:1;min-width:0}
+    button{font-family:inherit;font-weight:700;border-radius:9px;cursor:pointer;transition:background .15s;padding:0 14px;height:43px;border:1px solid #d0dbea;background:#f9fbff;color:var(--ink);white-space:nowrap}
+    button:hover:not(:disabled){background:#eaf1ff}button:disabled{opacity:.45;cursor:not-allowed}.primary{color:#fff;background:var(--blue);border-color:var(--blue)}.primary:hover:not(:disabled){background:#1b55ba}.danger{color:#fff;background:var(--red);border-color:var(--red)}.danger:hover:not(:disabled){background:#962734}
+    .buttons{display:flex;flex-wrap:wrap;gap:9px;margin-top:22px}.buttons button{flex:1;min-width:120px}.notice{margin-top:15px;padding:11px 13px;border-radius:10px;background:#fff5e4;border:1px solid #f2dfb8;color:#705327;font-size:12px}
+    .preview{position:relative;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;background:#0b1727;color:#8fa0b6;border-radius:12px;overflow:hidden;text-align:center}
+    .preview img{display:none;width:100%;height:100%;object-fit:contain}.preview .empty{padding:20px;font-size:14px}.preview .corner{position:absolute;top:12px;left:12px;font-size:11px;color:white;background:#d63642;border-radius:6px;padding:3px 7px;font-weight:bold;display:none}
+    .metrics{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-top:19px}.metric{padding:11px 12px;background:#f6f9fd;border-radius:10px;min-width:0}.metric .k{color:var(--muted);font-size:12px}.metric .v{font-size:19px;font-weight:800;word-break:break-all;margin-top:3px}
+    .path{font-size:12px;overflow-wrap:anywhere;color:var(--muted);background:#f6f9fd;padding:10px;border-radius:8px;margin-top:12px;min-height:44px}.estimate{display:flex;justify-content:space-between;align-items:center;background:#edf4ff;border:1px solid #d7e6ff;border-radius:12px;padding:15px 17px;margin-top:16px;gap:10px}.estimate strong{font-size:23px;color:#164fbb}.estimate small{font-size:12px;color:#476183}
+    .error{display:none;margin:12px 0 0;padding:11px;background:#fff0f1;border:1px solid #f0c5cc;color:#a62c37;font-size:12px;border-radius:9px;white-space:pre-line;overflow-wrap:anywhere}
+    .note-list{margin:0;padding-left:17px;font-size:12px;color:#53647d;line-height:1.8}.footer{text-align:center;color:#8996a7;font-size:11px;margin:0 0 20px}
+    @media(max-width:900px){.layout{grid-template-columns:1fr}.wrap{padding:15px}.card{padding:17px}}
+    @media(max-width:520px){.grid{grid-template-columns:1fr}.field.full{grid-column:auto}.buttons button{min-width:100px}h1{font-size:21px}.estimate strong{font-size:19px}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="brand"><div class="logo">●</div><div><h1>카메라 상시 녹화</h1><p class="desc">Galaxy Book · 로컬 저장 · 분할 MP4 · 음성 미녹음</p></div></div>
+    <span class="pill" id="statusPill" role="status">● 대기 중</span>
+  </div>
+  <div class="layout">
+    <main>
+      <section class="card">
+        <h2>녹화 및 저장 설정 <span class="sub">녹화 중에는 변경할 수 없습니다</span></h2>
+        <div class="grid">
+          <div class="field full"><label for="save_dir">영상 저장 폴더</label>
+            <div class="inline"><input id="save_dir" type="text" placeholder="예: D:\CameraRecordings" autocomplete="off"><button type="button" id="pick">폴더 선택</button></div>
+            <p class="hint">지정한 폴더에 날짜·시간별 MP4 파일을 생성합니다. 폴더가 없으면 자동 생성합니다.</p></div>
+          <div class="field"><label for="camera_index">사용 카메라</label><div class="inline"><select id="camera_index"><option value="0">카메라 0 (일반적으로 내장 카메라)</option><option value="1">카메라 1</option><option value="2">카메라 2</option><option value="3">카메라 3</option><option value="4">카메라 4</option><option value="5">카메라 5</option></select><button type="button" id="scan">검색</button></div></div>
+          <div class="field"><label for="segment_minutes">파일 저장 주기 (분)</label><input id="segment_minutes" type="number" min="1" max="120" step="1" value="15"><p class="hint">예: 15분 → 약 15분마다 파일 1개 저장</p></div>
+          <div class="field full"><label for="preset">영상 화질 프리셋</label><select id="preset"><option value="compact">저용량 권장 · 60일 약 94GB (320×180 / 5fps / 145kbps)</option><option value="low">매우 작은 용량 · 60일 약 65GB (320×180 / 2fps / 100kbps)</option><option value="medium">균형형 · 60일 약 194GB (426×240 / 5fps / 300kbps)</option><option value="high">고화질 · 60일 약 518GB (640×360 / 10fps / 800kbps)</option><option value="custom">사용자 지정</option></select></div>
+          <div class="field"><label for="resolution">영상 해상도</label><select id="resolution"><option>320x180</option><option>426x240</option><option>640x360</option><option>640x480</option><option>1280x720</option></select></div>
+          <div class="field"><label for="fps">초당 프레임 (fps)</label><select id="fps"><option value="2">2</option><option value="5">5</option><option value="10">10</option><option value="15">15</option><option value="30">30</option></select></div>
+          <div class="field"><label for="bitrate_kbps">영상 비트레이트 (kbps)</label><input type="number" id="bitrate_kbps" min="60" max="6000" step="5" value="145"><p class="hint">낮출수록 파일은 작아지지만 화질이 크게 떨어집니다.</p></div>
+          <div class="field"><label for="min_free_gb">녹화 중단 최소 여유 공간 (GB)</label><input type="number" id="min_free_gb" min="0.5" max="50" step="0.5" value="2"></div>
+          <div class="field full"><label for="constant_bitrate" style="display:flex;align-items:center;gap:9px"><input type="checkbox" id="constant_bitrate" checked style="width:18px;height:18px;accent-color:var(--blue)">고정 비트레이트 (CBR) 사용 — 60일 저장 용량을 100GB 안팎으로 일정하게 예측</label><p class="hint">정지 화면에서도 인코딩 패딩 데이터를 포함해 설정 비트레이트에 가깝게 기록합니다. 해제하면 파일이 더 작아질 수 있습니다.</p></div>
+        </div>
+        <div class="estimate"><div><div style="font-size:12px;font-weight:700">60일 연속 녹화 예상 데이터 크기</div><small>음성 없음 · CBR 설정 시 목표치 · 파일 헤더 포함 실제 용량 변동 가능</small></div><strong id="estimate">94.0 GB</strong></div>
+        <div class="buttons"><button type="button" id="save">설정 저장</button><button type="button" id="start" class="primary">● 녹화 시작</button><button type="button" id="stop" class="danger" disabled>■ 녹화 중지</button></div>
+        <div id="error" class="error" role="alert"></div>
+        <div class="notice"><b>절전 방지:</b> 녹화 중 Windows의 자동 절전 진입을 억제합니다. 다만 뚜껑 닫기, 수동 종료, Windows 업데이트 재시작, 전원 차단까지 막지는 못합니다. 상시 녹화 시 전원 어댑터를 연결하고 ‘덮개를 닫을 때: 아무 것도 안 함’을 별도로 설정하세요.</div>
+      </section>
+    </main>
+    <aside>
+      <section class="card"><h2>녹화 화면 미리보기</h2>
+        <div class="preview"><img id="previewImg" alt="녹화 화면 미리보기"><span class="empty" id="emptyPreview">녹화를 시작하면<br>카메라 영상이 표시됩니다.</span><span class="corner" id="recTag">● REC</span></div>
+        <div class="metrics"><div class="metric"><div class="k">녹화 진행 시간</div><div class="v" id="elapsed">00:00:00</div></div><div class="metric"><div class="k">저장 완료 파일</div><div class="v" id="files">0개</div></div><div class="metric"><div class="k">이번 실행 저장 용량</div><div class="v" id="saved">0 MB</div></div><div class="metric"><div class="k">디스크 여유 공간</div><div class="v" id="free">-</div></div></div>
+        <p class="hint" id="awake">절전 억제: 비활성</p><p class="hint" id="lastFrame">최근 프레임: -</p>
+        <label style="margin-top:14px">최근 완료 영상</label><div class="path" id="lastFile">아직 저장된 파일이 없습니다.</div>
+        <label style="margin-top:14px">현재 녹화 파일</label><div class="path" id="currentFile">-</div>
+      </section>
+      <section class="card"><h2>24시간 녹화 안내</h2><ul class="note-list">
+        <li>웹 브라우저 탭을 닫아도 Python 실행 창이 열려 있으면 계속 녹화됩니다.</li>
+        <li>녹화 중인 파일은 <b>.recording.mp4</b>이며 완료 후 <b>.mp4</b>로 바뀝니다.</li>
+        <li>정전·비정상 종료 후 잔여 파일은 다음 실행 시 <b>.interrupted.mp4</b>로 보존합니다. 재생을 보장하지는 않습니다.</li>
+        <li>저장 공간이 설정한 최소 여유 용량 미만이 되면 녹화를 중지합니다. 기존 파일은 자동 삭제하지 않습니다.</li>
+        <li>Windows 카메라 접근 권한을 허용해야 합니다. 다른 앱과 카메라를 동시에 쓰지 마세요.</li>
+      </ul></section>
+    </aside>
+  </div>
+  <p class="footer">카메라 영상은 선택한 컴퓨터 폴더에만 저장됩니다 · 서버는 127.0.0.1에서만 실행 · 외부 전송 없음</p>
+</div>
+<script>
+'use strict';
+const TOKEN='__RECORDER_TOKEN__';
+const $=(id)=>document.getElementById(id);
+const fields=['save_dir','camera_index','resolution','fps','bitrate_kbps','segment_minutes','min_free_gb','constant_bitrate'];
+const PRESETS={compact:['320x180',5,145],low:['320x180',2,100],medium:['426x240',5,300],high:['640x360',10,800]};
+let busy=false,hasLoaded=false,lastState='stopped';
+const isActive=(state)=>['starting','recording','reconnecting','stopping'].includes(state);
+const formatBytes=(n)=>n>=1e9?(n/1e9).toFixed(2)+' GB':(n/1e6).toFixed(1)+' MB';
+function showError(message){$('error').style.display=message?'block':'none';$('error').textContent=message||'';}
+function config(){return {save_dir:$('save_dir').value.trim(),camera_index:Number($('camera_index').value),resolution:$('resolution').value,fps:Number($('fps').value),bitrate_kbps:Number($('bitrate_kbps').value),segment_minutes:Number($('segment_minutes').value),min_free_gb:Number($('min_free_gb').value),constant_bitrate:$('constant_bitrate').checked};}
+function applyConfig(cfg){for(const id of fields){if(cfg[id]!==undefined){if(id==='constant_bitrate')$(id).checked=cfg[id];else $(id).value=cfg[id];}}syncPreset();estimate();}
+function syncPreset(){const found=Object.entries(PRESETS).find(([,x])=>x[0]===$('resolution').value&&x[1]===Number($('fps').value)&&x[2]===Number($('bitrate_kbps').value));$('preset').value=found?found[0]:'custom';}
+function estimate(){let kbps=Number($('bitrate_kbps').value)||0;let gb=60*86400*kbps*1000/8/1e9;$('estimate').textContent=gb.toLocaleString('ko-KR',{maximumFractionDigits:1,minimumFractionDigits:1})+' GB';}
+function setLocked(value){for(const id of fields)$(id).disabled=value;$('preset').disabled=value;$('pick').disabled=value;$('scan').disabled=value;$('save').disabled=value;$('start').disabled=value;$('stop').disabled=!value;}
+async function req(path, body){const opt=body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json','X-Recorder-Token':TOKEN},body:JSON.stringify(body)};
+ const response=await fetch(path,opt);const data=await response.json();if(!response.ok)throw new Error(data.error||'요청 실패');return data;}
+function duration(sec){const n=Math.max(0,Math.floor(sec));return [Math.floor(n/3600),Math.floor(n/60)%60,n%60].map(x=>String(x).padStart(2,'0')).join(':');}
+function render(s){const active=isActive(s.state);lastState=s.state;setLocked(active||busy);
+ const labels={stopped:'● 대기 중',starting:'◌ 카메라 연결 중',recording:'● 녹화 중',reconnecting:'◌ 카메라 재연결 중',stopping:'◌ 파일 저장 및 종료 중',error:'! 녹화 오류'};
+ const pill=$('statusPill');pill.textContent=labels[s.state]||s.state;pill.className='pill '+(s.state==='recording'?'live':s.state==='error'?'problem':'');
+ $('elapsed').textContent=duration(s.duration_sec);$('files').textContent=(s.files_saved||0)+'개';$('saved').textContent=formatBytes(s.bytes_saved||0);
+ $('free').textContent=s.free_gb===null?'-':s.free_gb.toFixed(1)+' GB';
+ $('awake').textContent='Windows 자동 절전 억제: '+(s.power_protected?'적용 중':active?'설정 대기 또는 실패':'비활성');
+ $('lastFrame').textContent='최근 프레임: '+(s.last_frame_at||'-');$('lastFile').textContent=s.last_file||'아직 저장된 파일이 없습니다.';$('currentFile').textContent=s.current_file||'-';
+ if(s.error)showError(s.error);
+ if(!hasLoaded){applyConfig(s.settings);hasLoaded=true;}
+ const preview=$('previewImg'),empty=$('emptyPreview');$('recTag').style.display=s.state==='recording'?'block':'none';
+ if(active && s.preview_available){preview.style.display='block';empty.style.display='none';preview.src='/api/preview?token='+encodeURIComponent(TOKEN)+'&t='+Date.now();}
+ else{preview.style.display='none';empty.style.display='block';empty.innerHTML=active?'카메라 연결 또는 영상 수신 대기 중':'녹화를 시작하면<br>카메라 영상이 표시됩니다.';preview.removeAttribute('src');}
+}
+async function poll(){try{const data=await req('/api/status');render(data);}catch(e){$('statusPill').textContent='! 서버 연결 끊김';$('statusPill').className='pill problem';showError('Python 프로그램에 연결할 수 없습니다. 실행 창을 확인하세요.');}}
+async function run(btn,operation,payload){if(busy)return;busy=true;$(btn).disabled=true;showError('');try{const result=await req(operation,payload);if(operation==='/api/pick-folder'&&result.folder)$('save_dir').value=result.folder;
+ else if(operation==='/api/cameras'){if(!result.cameras.length)throw new Error('사용 가능한 카메라가 없습니다. Windows 카메라 권한을 확인하세요.');const found=result.cameras.map(x=>x.index);if(!found.includes(Number($('camera_index').value)))$('camera_index').value=found[0];alert('검색된 카메라: '+found.join(', ')+'\n내장 카메라가 여러 개 표시될 수 있습니다.');}
+ else if(operation==='/api/save-settings')applyConfig(result.settings);
+ await poll();}catch(e){showError(e.message);}finally{busy=false;await poll();}}
+$('preset').addEventListener('change',()=>{const v=PRESETS[$('preset').value];if(v){$('resolution').value=v[0];$('fps').value=v[1];$('bitrate_kbps').value=v[2];}estimate();});
+for(const id of ['resolution','fps','bitrate_kbps'])$(id).addEventListener('change',()=>{syncPreset();estimate();});
+$('bitrate_kbps').addEventListener('input',estimate);
+$('start').addEventListener('click',()=>run('start','/api/start',config()));
+$('stop').addEventListener('click',()=>run('stop','/api/stop',{}));
+$('save').addEventListener('click',()=>run('save','/api/save-settings',config()));
+$('pick').addEventListener('click',()=>run('pick','/api/pick-folder',{}));
+$('scan').addEventListener('click',()=>run('scan','/api/cameras',{}));
+poll();setInterval(poll,1800);
+</script>
+</body>
+</html>
