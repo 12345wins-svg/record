@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="ko" data-platform="mobile">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; media-src blob: mediastream:; worker-src blob:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0b1730">
+<link rel="icon" href="data:,">
+<title>모바일 캠 레코더</title>
+<style>
+:root{--bg:#070f22;--bg2:#0e1d3f;--card:#0f1f40;--card2:#142850;--line:#223a6c;--tx:#e8eefb;--mut:#8da0c6;--acc:#c9a96a;--acc2:#e6d3a5;--rec:#e5484d;--ok:#3ecf8e;--warn:#f5a524;--r:14px}
+html[data-platform=mobile]{--bg:#06141f;--bg2:#0b2a3d;--card:#0d2638;--card2:#12324a;--line:#1f4a66;--acc:#4fd1c5;--acc2:#a4eee6}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Pretendard","Malgun Gothic","Noto Sans KR","Segoe UI",system-ui,sans-serif;color:var(--tx);background:radial-gradient(1200px 600px at 8% -10%,var(--bg2),var(--bg));background-color:var(--bg);min-height:100vh;-webkit-text-size-adjust:100%}
+.app{max-width:1280px;margin:0 auto;padding:16px;padding-bottom:max(16px,env(safe-area-inset-bottom))}
+.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+.brand{display:flex;align-items:center;gap:12px;flex:1;min-width:220px}
+.logo{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--card2),var(--bg2));border:1px solid var(--line);display:grid;place-items:center;color:var(--acc);font-size:20px}
+h1{font-size:19px;font-weight:700;letter-spacing:-.2px}
+.sub{font-size:12px;color:var(--mut);margin-top:2px}
+.clock{font:600 15px/1 Consolas,"Courier New",monospace;color:var(--acc2);background:var(--card);border:1px solid var(--line);padding:10px 14px;border-radius:10px;font-variant-numeric:tabular-nums}
+.badge{font-size:13px;font-weight:700;padding:9px 14px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--mut);display:flex;align-items:center;gap:8px}
+.badge::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--mut)}
+.badge[data-state=preview]{color:var(--acc2)}.badge[data-state=preview]::before{background:var(--acc)}
+.badge[data-state=rec]{color:#ffd9da;border-color:#7a2a30;background:#2a1218}.badge[data-state=rec]::before{background:var(--rec);animation:pulse 1.2s infinite}
+.badge[data-state=warn]{color:var(--warn)}.badge[data-state=warn]::before{background:var(--warn)}
+.badge[data-state=err]{color:#ff9a9d}.badge[data-state=err]::before{background:var(--rec)}
+@keyframes pulse{50%{opacity:.25}}
+.grid{display:grid;gap:16px;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);align-items:start}
+.card{background:linear-gradient(180deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:var(--r);padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.28)}
+.card h2{font-size:14px;font-weight:700;color:var(--acc2);margin-bottom:12px;letter-spacing:.2px}
+.stage{position:relative;background:#000;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
+#cv{display:block;width:100%;height:auto;background:#000}
+.ph{position:absolute;inset:0;display:grid;place-items:center;color:var(--mut);font-size:14px;background:#02060f}
+.ph[hidden]{display:none}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.btn{appearance:none;border:1px solid var(--line);background:var(--card2);color:var(--tx);font:600 14px inherit;font-family:inherit;padding:11px 16px;min-height:44px;border-radius:10px;cursor:pointer;transition:filter .15s,transform .05s}
+.btn:hover:not(:disabled){filter:brightness(1.15)}.btn:active:not(:disabled){transform:translateY(1px)}
+.btn:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.primary{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#0a1428;border-color:transparent}
+.btn.danger{background:#3a1519;border-color:#7a2a30;color:#ffd9da}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px;margin-top:14px;font-size:13px}
+.stats div{display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.stats dt{color:var(--mut)}.stats dd{font-weight:600;text-align:right;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+fieldset{border:0;display:grid;gap:12px;min-width:0}
+.fld{display:grid;gap:6px}.fld label,.lbl{font-size:12px;color:var(--mut)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+select,input[type=number]{width:100%;min-height:44px;background:#09152e;color:var(--tx);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font:inherit;font-size:14px}
+html[data-platform=mobile] select,html[data-platform=mobile] input[type=number]{background:#071b2a}
+.chk label{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--tx);min-height:44px}
+.chk input{width:20px;height:20px;accent-color:var(--acc)}
+.dirline{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mut,.hint{color:var(--mut);font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+.calc{margin-top:12px;padding:12px;border-radius:10px;background:rgba(0,0,0,.25);border:1px dashed var(--line);font-size:13px;line-height:1.7;white-space:pre-line}
+.calc.warn{border-color:var(--warn);color:#ffe3b0}
+#notice{display:none;margin-bottom:14px;padding:12px 14px;border-radius:10px;font-size:13px;line-height:1.5;border:1px solid var(--line);background:var(--card)}
+#notice.show{display:block}#notice.err{border-color:#7a2a30;background:#2a1218;color:#ffd9da}#notice.warn{border-color:#7a5a1c;background:#2a2010;color:#ffe3b0}
+.guide ul{padding-left:18px;display:grid;gap:7px;font-size:13px;line-height:1.55;color:#cfd9ef}.guide b{color:var(--acc2)}
+.full{grid-column:1/-1}
+.log{max-height:200px;overflow:auto;font:12px/1.55 Consolas,"Courier New",monospace;color:#b7c5e4;background:rgba(0,0,0,.28);border-radius:10px;padding:10px;white-space:pre-wrap;overflow-wrap:anywhere}
+.frow{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:12px}
+.frow .n{flex:1;min-width:0;overflow-wrap:anywhere;font-family:Consolas,monospace}.frow .s{color:var(--mut);white-space:nowrap}
+.frow .btn{min-height:36px;padding:6px 10px;font-size:12px}
+#filesList{max-height:320px;overflow:auto}
+#dim{position:fixed;inset:0;background:#000;z-index:99;display:grid;place-items:center;color:#2a3550;text-align:center;font-size:13px;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+#dim[hidden]{display:none}
+#vid{position:fixed;left:0;top:0;width:2px;height:2px;opacity:0;pointer-events:none}
+@media (max-width:980px){.grid{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:480px){.row2{grid-template-columns:1fr}.stats{grid-template-columns:1fr}.btn{flex:1 1 calc(50% - 8px)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand"><div class="logo" aria-hidden="true">◉</div><div><h1>모바일 캠 레코더</h1><p class="sub">한국표준시(KST) 오버레이 · 분할 저장 · 화면 유지</p></div></div>
+    <div class="clock" id="clock" aria-label="현재 한국표준시">----</div>
+    <div class="badge" id="badge" data-state="idle" role="status">대기</div>
+  </header>
+  <div id="notice" role="alert"></div>
+
+  <main class="grid">
+    <section class="card" aria-label="미리보기 및 제어">
+      <div class="stage"><canvas id="cv" width="640" height="360"></canvas><div class="ph" id="ph">카메라가 꺼져 있습니다</div></div>
+      <div class="actions">
+        <button type="button" id="btnCam" class="btn">카메라 켜기</button>
+        <button type="button" id="btnRec" class="btn primary">● 녹화 시작</button>
+        <button type="button" id="btnStop" class="btn danger" disabled>■ 녹화 종료</button>
+        <button type="button" id="btnDim" class="btn">화면 어둡게</button>
+        <button type="button" id="btnFs" class="btn">전체화면</button>
+      </div>
+      <dl class="stats">
+        <div><dt>경과 시간</dt><dd id="sElapsed">00:00:00</dd></div>
+        <div><dt>화면 유지</dt><dd id="sWake">꺼짐</dd></div>
+        <div style="grid-column:1/-1"><dt>현재 파일</dt><dd id="sSeg">-</dd></div>
+        <div><dt>저장 완료</dt><dd id="sFiles">0개 / 0건 오류</dd></div>
+        <div><dt>누적 용량</dt><dd id="sBytes">0 B</dd></div>
+        <div><dt>실측 비트레이트</dt><dd id="sRate">측정 대기</dd></div>
+        <div><dt>기간 환산 예상</dt><dd id="sProj">측정 대기</dd></div>
+      </dl>
+    </section>
+
+    <section class="card" aria-label="설정">
+      <h2>녹화 설정</h2>
+      <fieldset id="fsSet">
+        <div class="fld"><label for="selCam">카메라</label><select id="selCam"><option value="">자동 (기본 카메라)</option></select></div>
+        <div class="fld"><label for="selFacing">카메라 방향</label><select id="selFacing"><option value="environment">후면 카메라</option><option value="user">전면 카메라</option></select></div>
+        <div class="row2">
+          <div class="fld"><label for="selRes">해상도 (세로 기준)</label><select id="selRes"><option value="240">240p</option><option value="360" selected>360p (기본)</option><option value="480">480p</option><option value="720">720p</option><option value="1080">1080p</option></select></div>
+          <div class="fld"><label for="selFps">프레임 (fps)</label><select id="selFps"><option value="5">5</option><option value="10" selected>10 (기본)</option><option value="15">15</option><option value="24">24</option><option value="30">30</option></select></div>
+        </div>
+        <div class="fld chk"><label><input type="checkbox" id="chkAudio" checked> 마이크 소리도 함께 녹음 (24kbps)</label></div>
+        <div class="row2">
+          <div class="fld"><label for="selMode">화질 결정 방식</label><select id="selMode"><option value="auto">목표 용량으로 자동 계산</option><option value="manual">비트레이트 직접 지정</option></select></div>
+          <div class="fld" id="fldKbps"><label for="numKbps">영상 비트레이트 (kbps)</label><input type="number" id="numKbps" min="20" max="20000" step="1" value="125" inputmode="numeric"></div>
+        </div>
+        <div class="row2" id="rowTarget">
+          <div class="fld"><label for="numGB">목표 총 용량 (GB)</label><input type="number" id="numGB" min="1" max="100000" step="1" value="100" inputmode="numeric"></div>
+          <div class="fld"><label for="numDays">24시간 녹화 기간 (일)</label><input type="number" id="numDays" min="1" max="3650" step="1" value="60" inputmode="numeric"></div>
+        </div>
+        <div class="row2">
+          <div class="fld"><label for="numSeg">저장 간격 (분)</label><input type="number" id="numSeg" min="1" max="1440" step="1" value="10" inputmode="numeric"></div>
+          <div class="fld"><label for="selPrec">시간 표시 단위</label><select id="selPrec"><option value="0" selected>초 (기본)</option><option value="1">0.1초</option><option value="2">0.01초</option><option value="3">0.001초 (밀리초)</option></select></div>
+        </div>
+        <div class="fld"><label for="selCodec">코덱</label><select id="selCodec"><option value="auto" selected>자동 (VP9 우선, 저용량에 유리)</option><option value="vp8">VP8 (CPU 부담 적음)</option><option value="h264">H.264 (호환성)</option></select></div>
+        <div class="fld"><label for="selStore">저장 방식</label><select id="selStore"></select></div>
+        <div class="fld" id="rowDir">
+          <span class="lbl">저장 폴더</span>
+          <div class="dirline"><button type="button" id="btnPick" class="btn">폴더 선택</button><span id="lblDir" class="mut">선택된 폴더 없음</span></div>
+          <p class="hint">Chrome은 '문서', '다운로드', '바탕 화면' 같은 시스템 폴더 자체는 선택할 수 없습니다. 그 안에 새 폴더(예: CamRec)를 만든 뒤 선택하세요.</p>
+        </div>
+      </fieldset>
+      <div class="calc" id="calc"></div>
+    </section>
+
+    <section class="card guide full" aria-label="녹화 전 점검">
+      <h2>녹화 전 점검 사항</h2>
+      
+      
+      <ul>
+        <li><b>https 주소에서 열어야 합니다.</b> 카메라·마이크는 보안 연결에서만 동작합니다. 이 파일을 GitHub Pages, Netlify 등 https로 올려 Chrome으로 여세요(로컬 파일은 권한이 제한될 수 있습니다).</li>
+        <li><b>웹페이지는 전화·문자·시스템 알림 팝업을 직접 막을 수 없습니다.</b> 아래 시스템 설정으로 차단하세요.
+          <br>① <b>비행기 모드 켜기</b> — 전화·문자 수신 자체가 차단됩니다(이 프로그램은 인터넷이 필요 없음).
+          <br>② 또는 <b>방해 금지 모드</b>를 켜고 예외를 모두 끄기.
+          <br>③ <b>화면 고정(앱 고정)</b> — 설정 › 보안 및 개인정보 보호 › 기타 보안 설정에서 켠 뒤, 최근 앱 화면에서 Chrome 아이콘 › '이 앱 고정'(메뉴 위치는 기종마다 다릅니다).</li>
+        <li>녹화 중에는 <b>충전기를 연결</b>하고, 설정 › 배터리에서 Chrome 사용량 제한을 해제하세요. 장시간 녹화는 발열에 주의하세요.</li>
+        <li>화면이 꺼지거나 Chrome이 백그라운드로 가면 카메라가 중단됩니다. <b>'화면 어둡게'</b>(두 번 탭하면 해제)를 쓰면 화면을 켠 채 전력을 줄일 수 있습니다.</li>
+        <li>Android Chrome은 폴더 직접 지정이 불가능합니다. <b>브라우저 내부 저장소</b>에 저장하면 아래 목록에서 파일별로 내려받고, <b>다운로드 폴더 자동 저장</b>은 Chrome 설정 › 다운로드 › 위치에서 저장 위치를 바꿀 수 있습니다.</li>
+        <li>영상의 시각은 휴대폰 시계 기준입니다. 설정에서 <b>자동 날짜 및 시간</b>을 켜 두세요.</li>
+      </ul>
+      
+    </section>
+
+    <section class="card full" id="filesCard" hidden>
+      <h2>내부 저장소 파일 <span class="mut" id="opfsInfo"></span></h2>
+      <div id="filesList"></div>
+    </section>
+
+    <section class="card full">
+      <h2>실행 기록</h2>
+      <div class="log" id="logEl" aria-live="polite"></div>
+    </section>
+  </main>
+</div>
+<div id="dim" hidden><div><div id="dimInfo" style="font:600 14px Consolas,monospace">● REC</div><div style="margin-top:8px">화면을 두 번 탭(클릭)하면 해제됩니다</div></div></div>
+<video id="vid" muted playsinline autoplay></video>
+
+<script>
+(()=>{
+'use strict';
+const PLATFORM=document.documentElement.dataset.platform==='mobile'?'mobile':'pc';
+const IS_MOBILE=PLATFORM==='mobile';
+const $=id=>document.getElementById(id);
+const KST_MS=32400000,WD=['일','월','화','수','목','금','토'];
+const P2=[];for(let i=0;i<100;i++)P2.push(i<10?'0'+i:''+i);
+const AUDIO_BPS=24000,OVERHEAD=0.03,MIN_VBPS=20000;
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const emsg=e=>e&&e.name?(e.name+(e.message?': '+e.message:'')):String(e);
+
+/* ---------- DOM ---------- */
+const cv=$('cv'),ctx=cv.getContext('2d',{alpha:false}),vid=$('vid'),ph=$('ph');
+const el={clock:$('clock'),badge:$('badge'),notice:$('notice'),btnCam:$('btnCam'),btnRec:$('btnRec'),btnStop:$('btnStop'),btnDim:$('btnDim'),btnFs:$('btnFs'),
+  sElapsed:$('sElapsed'),sWake:$('sWake'),sSeg:$('sSeg'),sFiles:$('sFiles'),sBytes:$('sBytes'),sRate:$('sRate'),sProj:$('sProj'),
+  fsSet:$('fsSet'),selCam:$('selCam'),selFacing:$('selFacing'),selRes:$('selRes'),selFps:$('selFps'),chkAudio:$('chkAudio'),selMode:$('selMode'),
+  numKbps:$('numKbps'),numGB:$('numGB'),numDays:$('numDays'),numSeg:$('numSeg'),selPrec:$('selPrec'),selCodec:$('selCodec'),selStore:$('selStore'),
+  fldKbps:$('fldKbps'),rowTarget:$('rowTarget'),rowDir:$('rowDir'),btnPick:$('btnPick'),lblDir:$('lblDir'),calc:$('calc'),
+  filesCard:$('filesCard'),filesList:$('filesList'),opfsInfo:$('opfsInfo'),logEl:$('logEl'),dim:$('dim'),dimInfo:$('dimInfo')};
+
+/* ---------- 상태 ---------- */
+const S={state:'idle',stream:null,camKey:'',camCfg:null,vtrack:null,canvasStream:null,outStream:null,useReq:false,audioOn:false,
+  worker:null,workerUrl:null,recording:false,busy:false,stopping:false,rolling:false,recovering:false,
+  seg:null,segNo:0,segMs:600000,segEnd:0,active:new Set(),startAt:0,totalBytes:0,files:0,errors:0,
+  wake:null,wantWake:false,wakeBusy:false,dirHandle:null,dir:null,storeMode:'download',mime:'',vbps:0,fps:10,prec:0,days:60,lastUi:0};
+
+/* ---------- 시각(KST) ---------- */
+const kd=new Date(0);
+function kstString(now,dg,c){
+  const unit=dg===0?1000:dg===1?100:dg===2?10:1;
+  const key=Math.floor(now/unit);
+  if(c.key===key&&c.dg===dg)return c.str;
+  kd.setTime(now+KST_MS);
+  let s=kd.getUTCFullYear()+'-'+P2[kd.getUTCMonth()+1]+'-'+P2[kd.getUTCDate()]+'('+WD[kd.getUTCDay()]+') '+P2[kd.getUTCHours()]+':'+P2[kd.getUTCMinutes()]+':'+P2[kd.getUTCSeconds()];
+  if(dg>0){const m=kd.getUTCMilliseconds();s+='.'+(m<10?'00'+m:m<100?'0'+m:''+m).slice(0,dg);}
+  c.key=key;c.dg=dg;c.str=s+' KST';return c.str;
+}
+const stampCache={key:-1,dg:-1,str:''},clockCache={key:-1,dg:-1,str:''};
+function kstFileStamp(now){
+  kd.setTime(now+KST_MS);
+  return kd.getUTCFullYear()+P2[kd.getUTCMonth()+1]+P2[kd.getUTCDate()]+'_'+P2[kd.getUTCHours()]+P2[kd.getUTCMinutes()]+P2[kd.getUTCSeconds()];
+}
+function fmtDur(ms){const t=Math.max(0,Math.floor(ms/1000));const h=Math.floor(t/3600),m=Math.floor(t%3600/60),s=t%60;return (h<100?P2[h]:h)+':'+P2[m]+':'+P2[s];}
+function fmtBytes(b){if(b<1024)return b+' B';const u=['KB','MB','GB','TB'];let i=-1;do{b/=1024;i++;}while(b>=1024&&i<3);return b.toFixed(b>=100?0:1)+' '+u[i];}
+
+/* ---------- 로그/알림 ---------- */
+const logBuf=[];
+function log(m){logBuf.push('['+kstString(Date.now(),0,clockCache).slice(11,19)+'] '+m);if(logBuf.length>80)logBuf.shift();el.logEl.textContent=logBuf.join('\n');el.logEl.scrollTop=el.logEl.scrollHeight;}
+function note(text,level){el.notice.textContent=text;el.notice.className=text?('show '+(level||'')):'';if(text)log(text);}
+function explain(e){
+  const n=e&&e.name;
+  if(n==='NotAllowedError'||n==='SecurityError')return '카메라/마이크 권한이 거부되었습니다. 주소창의 권한 설정에서 허용한 뒤 다시 시도하세요. (https 또는 localhost 필요)';
+  if(n==='NotFoundError'||n==='OverconstrainedError')return '선택한 카메라를 찾을 수 없습니다. 카메라 선택을 "자동"으로 바꿔 보세요.';
+  if(n==='NotReadableError')return '다른 앱이 카메라를 사용 중이거나 카메라에 접근할 수 없습니다.';
+  return emsg(e);
+}
+
+/* ---------- 지원 여부 ---------- */
+const HAS_DIR=typeof window.showDirectoryPicker==='function';
+const HAS_OPFS=!!(navigator.storage&&navigator.storage.getDirectory)&&typeof FileSystemFileHandle!=='undefined'&&'createWritable' in FileSystemFileHandle.prototype;
+function setupStoreOptions(){
+  const add=(v,t)=>el.selStore.appendChild(new Option(t,v));
+  if(HAS_DIR)add('dir','지정한 폴더에 저장');
+  if(HAS_OPFS)add('opfs','브라우저 내부 저장소(OPFS)');
+  add('download','다운로드 폴더로 자동 저장');
+  el.selStore.value=IS_MOBILE?(HAS_OPFS?'opfs':'download'):(HAS_DIR?'dir':'download');
+}
+
+/* ---------- 설정 읽기/계산 ---------- */
+function num(inp,min,max,def){const v=parseFloat(inp.value);return Number.isFinite(v)?Math.min(max,Math.max(min,v)):def;}
+function readCfg(){
+  return {camId:el.selCam.value||'',facing:el.selFacing?el.selFacing.value:'environment',p:parseInt(el.selRes.value,10)||360,fps:parseInt(el.selFps.value,10)||10,
+    audio:el.chkAudio.checked,mode:el.selMode.value,gb:num(el.numGB,1,100000,100),days:num(el.numDays,1,3650,60),kbps:num(el.numKbps,20,20000,125),
+    segMin:Math.round(num(el.numSeg,1,1440,10)),prec:parseInt(el.selPrec.value,10)||0,codec:el.selCodec.value};
+}
+function calcRate(c){
+  const audio=c.audio?AUDIO_BPS:0;let v;
+  if(c.mode==='auto'){const total=c.gb*1e9*8/(c.days*86400);v=Math.max(MIN_VBPS,Math.round(total/(1+OVERHEAD))-audio);}
+  else v=Math.round(c.kbps*1000);
+  const tot=(v+audio)*(1+OVERHEAD);
+  return {v,audio,tot,gb:tot*86400*c.days/8/1e9,perMin:tot*60/8,perSeg:tot*c.segMin*60/8};
+}
+function renderCalc(){
+  const c=readCfg(),r=calcRate(c);
+  el.fldKbps.hidden=c.mode==='auto';el.rowTarget.hidden=c.mode!=='auto';
+  const w=Math.round(c.p*16/9),bpp=r.v/(w*c.p*c.fps);
+  let t='영상 '+(r.v/1000).toFixed(0)+' kbps'+(c.audio?' + 소리 24 kbps':'')+'\n';
+  t+='24시간 녹화 시 약 '+(r.tot*86400/8/1e9).toFixed(2)+' GB/일 → '+c.days+'일 약 '+r.gb.toFixed(1)+' GB\n';
+  t+='파일 1개('+c.segMin+'분) 약 '+fmtBytes(r.perSeg)+' · 파일 수 약 '+Math.ceil(1440/c.segMin)+'개/일';
+  let warn=false;
+  if(bpp<0.025){t+='\n⚠ 해상도 대비 비트레이트가 낮아 움직임이 많으면 화질이 크게 떨어질 수 있습니다. 해상도나 fps를 낮추세요.';warn=true;}
+  if(c.mode==='auto'&&r.v===MIN_VBPS&&r.gb>c.gb*1.02){t+='\n⚠ 목표 용량이 너무 작아 최소 비트레이트로 고정되었습니다. 예상 용량이 목표를 넘습니다.';warn=true;}
+  el.calc.textContent=t;el.calc.className='calc'+(warn?' warn':'');
+}
+
+/* ---------- 설정 저장/복원 ---------- */
+const SKEY='camrec.v1.'+PLATFORM;
+const SIDS=['selFacing','selRes','selFps','chkAudio','selMode','numGB','numDays','numKbps','numSeg','selPrec','selCodec','selStore'];
+function saveSettings(){try{const o={};for(const id of SIDS){const e=el[id];if(!e)continue;o[id]=e.type==='checkbox'?e.checked:e.value;}localStorage.setItem(SKEY,JSON.stringify(o));}catch(_){}}
+function loadSettings(){
+  try{
+    const o=JSON.parse(localStorage.getItem(SKEY)||'null');if(!o||typeof o!=='object')return;
+    for(const id of SIDS){const e=el[id];if(!e||!(id in o))continue;const v=o[id];
+      if(e.type==='checkbox'){if(typeof v==='boolean')e.checked=v;}
+      else if(e.tagName==='SELECT'){if(typeof v==='string'&&Array.prototype.some.call(e.options,x=>x.value===v))e.value=v;}
+      else if(e.type==='number'){const n=parseFloat(v);if(Number.isFinite(n)&&n>=+e.min&&n<=+e.max)e.value=String(n);}}
+  }catch(_){}
+}
+
+/* ---------- 상태 표시 ---------- */
+const STATE_TXT={idle:'대기',preview:'미리보기',rec:'녹화 중',warn:'주의',err:'오류'};
+function setState(st){
+  S.state=st;el.badge.dataset.state=st;el.badge.textContent=STATE_TXT[st]||st;
+  const rec=st==='rec';
+  el.btnRec.disabled=rec||S.busy;el.btnStop.disabled=!rec;el.btnCam.disabled=rec||S.busy;el.fsSet.disabled=rec;
+  el.btnCam.textContent=S.stream?'카메라 끄기':'카메라 켜기';
+}
+
+/* ---------- 프레임 그리기 ---------- */
+let fit={dx:0,dy:0,dw:0,dh:0,lb:false,vw:0,vh:0},fontPx=0;
+function computeFit(vw,vh){
+  const W=cv.width,H=cv.height,s=Math.min(W/vw,H/vh),dw=Math.round(vw*s),dh=Math.round(vh*s);
+  fit={dx:(W-dw)>>1,dy:(H-dh)>>1,dw,dh,lb:(dw<W-1||dh<H-1),vw,vh};
+}
+function drawFrame(now){
+  const W=cv.width,H=cv.height,vw=vid.videoWidth,vh=vid.videoHeight;
+  if(vw>0&&vid.readyState>=2){
+    if(vw!==fit.vw||vh!==fit.vh)computeFit(vw,vh);
+    if(fit.lb){ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);}
+    ctx.drawImage(vid,fit.dx,fit.dy,fit.dw,fit.dh);
+  }else{ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);}
+  const bar=Math.max(18,Math.round(H*0.075)),txt=kstString(now,S.prec,stampCache);
+  ctx.fillStyle='rgba(8,18,42,0.66)';ctx.fillRect(0,H-bar,W,bar);
+  const fp=Math.max(10,Math.floor(bar*0.6));
+  if(fp!==fontPx){fontPx=fp;ctx.font='700 '+fp+'px Consolas,"Courier New",monospace';ctx.textAlign='center';ctx.textBaseline='middle';}
+  const cx=W>>1,cy=H-(bar>>1)+1;
+  ctx.lineJoin='round';ctx.lineWidth=Math.max(2,fp/6);ctx.strokeStyle='rgba(0,0,0,.85)';ctx.strokeText(txt,cx,cy,W-8);
+  ctx.fillStyle='#fff';ctx.fillText(txt,cx,cy,W-8);
+  if(S.useReq&&S.vtrack&&S.vtrack.requestFrame)S.vtrack.requestFrame();
+}
+
+/* ---------- 타이머(Worker: 백그라운드 스로틀 회피) ---------- */
+function startWorker(fps){
+  stopWorker();
+  const url=URL.createObjectURL(new Blob(['let t=0;onmessage=e=>{clearInterval(t);if(e.data>0)t=setInterval(()=>postMessage(1),e.data);};'],{type:'text/javascript'}));
+  const w=new Worker(url);S.worker=w;S.workerUrl=url;w.onmessage=onTick;w.postMessage(Math.max(20,Math.round(1000/fps)));
+}
+function stopWorker(){
+  if(S.worker){S.worker.onmessage=null;S.worker.postMessage(0);S.worker.terminate();S.worker=null;}
+  if(S.workerUrl){URL.revokeObjectURL(S.workerUrl);S.workerUrl=null;}
+}
+function onTick(){
+  const now=Date.now();
+  drawFrame(now);
+  if(S.recording&&!S.rolling&&!S.recovering&&now>=S.segEnd)rollover().catch(e=>log('분할 오류: '+emsg(e)));
+  if(now-S.lastUi>=1000){S.lastUi=now;updateUi(now);}
+}
+function updateUi(now){
+  el.clock.textContent=kstString(now,0,clockCache);
+  el.sWake.textContent=(S.wake&&!S.wake.released)?'유지 중':(S.wantWake?'재요청 중':'꺼짐');
+  if(S.recording){
+    if(S.wantWake&&!S.wakeBusy&&(!S.wake||S.wake.released))acquireWake();
+    const e=now-S.startAt;el.sElapsed.textContent=fmtDur(e);
+    if(S.seg)el.sSeg.textContent=S.seg.name+' · 다음 저장까지 '+fmtDur(S.segEnd-now);
+    el.sFiles.textContent=S.files+'개 / '+S.errors+'건 오류';el.sBytes.textContent=fmtBytes(S.totalBytes);
+    if(e>=30000){const bps=S.totalBytes*8/(e/1000);el.sRate.textContent=(bps/1000).toFixed(1)+' kbps';el.sProj.textContent=(bps*86400*S.days/8/1e9).toFixed(1)+' GB / '+S.days+'일';}
+    if(!el.dim.hidden)el.dimInfo.textContent='● REC '+fmtDur(e);
+  }
+}
+
+/* ---------- 카메라 ---------- */
+async function openMedia(c,wantAudio){
+  let w=Math.round(c.p*16/9),h=c.p;
+  if(IS_MOBILE&&window.innerHeight>window.innerWidth){const t=w;w=h;h=t;}
+  const v={width:{ideal:w},height:{ideal:h},frameRate:{ideal:c.fps}};
+  if(c.camId)v.deviceId={exact:c.camId};else if(IS_MOBILE)v.facingMode={ideal:c.facing};
+  const a=wantAudio?{channelCount:1,echoCancellation:false,noiseSuppression:false,autoGainControl:true}:false;
+  try{return await navigator.mediaDevices.getUserMedia({video:v,audio:a});}
+  catch(e){
+    if(!wantAudio)throw e;
+    log('마이크를 사용할 수 없어 영상만 녹화합니다 ('+emsg(e)+')');
+    return await navigator.mediaDevices.getUserMedia({video:v,audio:false});
+  }
+}
+function bindEnded(st){st.getTracks().forEach(t=>t.addEventListener('ended',onTrackEnded,{once:true}));}
+function waitMeta(){
+  return new Promise(res=>{
+    if(vid.videoWidth>0)return res();
+    let done=false;const fin=()=>{if(done)return;done=true;vid.removeEventListener('loadedmetadata',fin);clearTimeout(tm);res();};
+    const tm=setTimeout(fin,6000);vid.addEventListener('loadedmetadata',fin);
+  });
+}
+const even=n=>Math.max(2,n&~1);
+async function ensureCamera(){
+  const c=readCfg();
+  const key=[c.camId,c.facing,c.p,c.fps,c.audio].join('|');
+  if(S.stream&&S.camKey===key&&S.stream.active)return;
+  stopCamera();
+  const st=await openMedia(c,c.audio);
+  S.stream=st;S.camKey=key;S.camCfg=c;S.audioOn=st.getAudioTracks().length>0;
+  vid.srcObject=st;try{await vid.play();}catch(_){}
+  await waitMeta();
+  const vw=vid.videoWidth||Math.round(c.p*16/9),vh=vid.videoHeight||c.p;
+  if(vw>=vh){cv.height=even(c.p);cv.width=even(Math.round(c.p*vw/vh));}else{cv.width=even(c.p);cv.height=even(Math.round(c.p*vh/vw));}
+  fit.vw=0;fontPx=0;
+  S.useReq=!!(window.CanvasCaptureMediaStreamTrack&&'requestFrame' in CanvasCaptureMediaStreamTrack.prototype);
+  S.canvasStream=cv.captureStream(S.useReq?0:c.fps);
+  S.vtrack=S.canvasStream.getVideoTracks()[0];
+  S.outStream=new MediaStream([S.vtrack,...st.getAudioTracks()]);
+  bindEnded(st);ph.hidden=true;S.prec=c.prec;
+  startWorker(c.fps);drawFrame(Date.now());
+  refreshDevices();
+}
+function stopCamera(){
+  stopWorker();
+  if(S.stream){S.stream.getTracks().forEach(t=>t.stop());S.stream=null;}
+  if(S.canvasStream){S.canvasStream.getTracks().forEach(t=>t.stop());S.canvasStream=null;}
+  S.vtrack=null;S.outStream=null;S.camKey='';vid.srcObject=null;ph.hidden=false;fit.vw=0;
+  ctx.fillStyle='#000';ctx.fillRect(0,0,cv.width,cv.height);
+}
+async function refreshDevices(){
+  try{
+    const list=(await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==='videoinput');
+    const cur=el.selCam.value;el.selCam.replaceChildren(new Option('자동 (기본 카메라)',''));
+    list.forEach((d,i)=>{if(d.deviceId)el.selCam.appendChild(new Option(d.label||('카메라 '+(i+1)),d.deviceId));});
+    if(Array.prototype.some.call(el.selCam.options,o=>o.value===cur))el.selCam.value=cur;
+  }catch(_){}
+}
+function onTrackEnded(){
+  if(S.recording){if(!S.recovering){S.recovering=true;note('카메라/마이크 연결이 끊겼습니다. 자동 재연결을 시도합니다.','warn');setState('warn');tryRecover();}}
+  else if(S.stream&&!S.busy){stopCamera();setState('idle');note('카메라 연결이 끊겨 미리보기를 종료했습니다.','warn');}
+}
+async function tryRecover(){
+  while(S.recording){
+    try{
+      const st=await openMedia(S.camCfg,S.audioOn);
+      const old=S.stream;S.stream=st;vid.srcObject=st;try{await vid.play();}catch(_){}
+      if(old)old.getTracks().forEach(t=>t.stop());
+      bindEnded(st);S.outStream=new MediaStream([S.vtrack,...st.getAudioTracks()]);
+      log('재연결 성공. 새 파일로 이어서 녹화합니다.');
+      S.recovering=false;await rollover();if(S.recording){setState('rec');note('','');}
+      return;
+    }catch(e){await sleep(5000);}
+  }
+  S.recovering=false;
+}
+
+/* ---------- 저장소 ---------- */
+function idb(){return new Promise((res,rej)=>{const r=indexedDB.open('camrec',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
+async function idbPut(k,v){const db=await idb();try{await new Promise((res,rej)=>{const tx=db.transaction('kv','readwrite');tx.objectStore('kv').put(v,k);tx.oncomplete=res;tx.onerror=()=>rej(tx.error);});}finally{db.close();}}
+async function idbGet(k){const db=await idb();try{return await new Promise((res,rej)=>{const q=db.transaction('kv','readonly').objectStore('kv').get(k);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error);});}finally{db.close();}}
+async function opfsDir(){const root=await navigator.storage.getDirectory();return root.getDirectoryHandle('recordings',{create:true});}
+async function prepareStorage(){
+  S.storeMode=el.selStore.value;
+  if(S.storeMode==='dir'){
+    if(!S.dirHandle){note('저장 폴더를 먼저 선택하세요.','err');return false;}
+    let p=await S.dirHandle.queryPermission({mode:'readwrite'});
+    if(p!=='granted')p=await S.dirHandle.requestPermission({mode:'readwrite'});
+    if(p!=='granted'){note('폴더 쓰기 권한이 필요합니다.','err');return false;}
+    S.dir=S.dirHandle;
+  }else if(S.storeMode==='opfs'){
+    S.dir=await opfsDir();try{if(navigator.storage.persist)await navigator.storage.persist();}catch(_){}
+  }else S.dir=null;
+  return true;
+}
+function triggerDownload(blob,name){
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=name;a.rel='noopener';a.style.display='none';document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
+async function pickFolder(){
+  try{
+    const h=await window.showDirectoryPicker({id:'camrec',mode:'readwrite'});
+    S.dirHandle=h;el.lblDir.textContent=h.name;note('','');
+    try{await idbPut('dir',h);}catch(_){}
+  }catch(e){
+    if(e&&e.name==='AbortError')return;
+    if(e&&e.name==='SecurityError')note('이 폴더는 선택할 수 없습니다. 문서·다운로드·바탕 화면 자체가 아닌, 그 안의 새 폴더를 선택하세요.','err');
+    else note('폴더 선택 실패: '+emsg(e),'err');
+  }
+}
+function updateStoreUi(){
+  S.storeMode=el.selStore.value;
+  el.rowDir.hidden=S.storeMode!=='dir';
+  refreshFiles();
+}
+const FNAME=/^REC_\d{8}_\d{6}_\d{4}\.(webm|mp4)$/;
+async function refreshFiles(){
+  if(S.storeMode!=='opfs'||!HAS_OPFS){el.filesCard.hidden=true;return;}
+  el.filesCard.hidden=false;
+  try{
+    const dir=await opfsDir(),arr=[];let total=0;
+    for await(const [n,h] of dir.entries()){if(h.kind==='file'&&FNAME.test(n)){const f=await h.getFile();arr.push({n,size:f.size});total+=f.size;}}
+    arr.sort((a,b)=>a.n<b.n?1:-1);
+    const frag=document.createDocumentFragment(),active=new Set();S.active.forEach(s=>active.add(s.name));
+    arr.slice(0,200).forEach(f=>{
+      const row=document.createElement('div');row.className='frow';
+      const n=document.createElement('span');n.className='n';n.textContent=f.n;
+      const s=document.createElement('span');s.className='s';s.textContent=fmtBytes(f.size);
+      const d=document.createElement('button');d.type='button';d.className='btn';d.dataset.act='dl';d.dataset.n=f.n;d.textContent='내려받기';
+      const r=document.createElement('button');r.type='button';r.className='btn';r.dataset.act='rm';r.dataset.n=f.n;r.textContent='삭제';r.disabled=active.has(f.n);
+      row.append(n,s,d,r);frag.appendChild(row);
+    });
+    if(!arr.length){const p=document.createElement('p');p.className='mut';p.textContent='저장된 파일이 없습니다.';frag.appendChild(p);}
+    el.filesList.replaceChildren(frag);
+    let info='· '+arr.length+'개, '+fmtBytes(total);
+    try{const e=await navigator.storage.estimate();if(e&&e.quota)info+=' · 사용 가능 한도 약 '+fmtBytes(e.quota-(e.usage||0));}catch(_){}
+    el.opfsInfo.textContent=info;
+  }catch(e){log('파일 목록 오류: '+emsg(e));}
+}
+el.filesList.addEventListener('click',async ev=>{
+  const b=ev.target.closest('button[data-act]');if(!b)return;
+  const n=b.dataset.n;if(!FNAME.test(n))return;
+  try{
+    const dir=await opfsDir();
+    if(b.dataset.act==='dl'){const f=await(await dir.getFileHandle(n)).getFile();triggerDownload(f,n);}
+    else if(b.dataset.act==='rm'&&window.confirm(n+' 파일을 삭제할까요?')){await dir.removeEntry(n);refreshFiles();}
+  }catch(e){log('파일 작업 오류: '+emsg(e));}
+});
+
+/* ---------- 녹화(분할) ---------- */
+function pickMime(audio,pref){
+  const a=audio;
+  const map={vp9:['video/webm;codecs=vp9'+(a?',opus':'')],vp8:['video/webm;codecs=vp8'+(a?',opus':'')],
+    h264:['video/mp4;codecs=avc1.42E01E'+(a?',mp4a.40.2':''),'video/webm;codecs=h264'+(a?',opus':'')]};
+  const order=pref==='auto'?['vp9','vp8','h264']:[pref,'vp9','vp8'];
+  for(const k of order)for(const m of map[k])if(MediaRecorder.isTypeSupported(m))return m;
+  return '';
+}
+function onWriteError(seg,e){seg.failed=true;S.errors++;log('저장 오류('+seg.name+'): '+emsg(e));setState('warn');}
+async function openSegment(){
+  const opts={videoBitsPerSecond:S.vbps};
+  if(S.audioOn)opts.audioBitsPerSecond=AUDIO_BPS;
+  if(S.mime)opts.mimeType=S.mime;
+  const rec=new MediaRecorder(S.outStream,opts);
+  const ext=((rec.mimeType||S.mime||'')).indexOf('mp4')>=0?'mp4':'webm';
+  const no=++S.segNo,now=Date.now();
+  const seg={name:'REC_'+kstFileStamp(now)+'_'+String(no).padStart(4,'0')+'.'+ext,bytes:0,q:Promise.resolve(),writer:null,chunks:null,rec,failed:false,startAt:now,done:null,resolveDone:null};
+  seg.done=new Promise(r=>{seg.resolveDone=r;});
+  if(S.storeMode==='download')seg.chunks=[];
+  else{const fh=await S.dir.getFileHandle(seg.name,{create:true});seg.writer=await fh.createWritable();}
+  rec.ondataavailable=ev=>{
+    const d=ev.data;if(!d||!d.size)return;
+    seg.bytes+=d.size;S.totalBytes+=d.size;
+    if(seg.writer){const w=seg.writer;seg.q=seg.q.then(()=>w.write(d)).catch(e=>onWriteError(seg,e));}
+    else if(seg.chunks)seg.chunks.push(d);
+  };
+  rec.onstop=()=>{
+    if(S.recording&&S.seg===seg&&!S.rolling){log('녹화기가 예기치 않게 중지되어 새 파일로 이어갑니다.');S.segEnd=Date.now()+5000;}
+    finalizeSegment(seg);
+  };
+  rec.onerror=ev=>{S.errors++;log('녹화기 오류: '+(ev.error&&ev.error.name||'알 수 없음'));};
+  try{rec.start(1000);}
+  catch(e){if(seg.writer){try{await seg.writer.abort();}catch(_){}}throw e;}
+  S.active.add(seg);S.seg=seg;S.segEnd=now+S.segMs;
+  return seg;
+}
+async function finalizeSegment(seg){
+  try{
+    if(seg.writer){const w=seg.writer;seg.writer=null;await seg.q;await w.close();}
+    else if(seg.chunks){const parts=seg.chunks;seg.chunks=null;if(parts.length)triggerDownload(new Blob(parts,{type:seg.rec.mimeType||S.mime||'video/webm'}),seg.name);}
+    if(!seg.failed)S.files++;
+  }catch(e){S.errors++;log('파일 마무리 오류('+seg.name+'): '+emsg(e));}
+  finally{seg.q=null;S.active.delete(seg);seg.resolveDone();if(S.storeMode==='opfs')refreshFiles();}
+}
+async function rollover(){
+  if(S.rolling||!S.recording)return;
+  S.rolling=true;
+  try{
+    const old=S.seg;
+    await openSegment();
+    if(old&&old.rec.state!=='inactive')old.rec.stop();
+  }catch(e){S.errors++;S.segEnd=Date.now()+30000;log('새 파일 생성 실패(30초 후 재시도, 기존 파일은 계속 기록): '+emsg(e));setState('warn');}
+  finally{S.rolling=false;}
+}
+async function startRecording(){
+  if(S.recording||S.busy)return;
+  S.busy=true;setState(S.state);
+  try{
+    note('','');saveSettings();
+    if(!await prepareStorage()){S.busy=false;setState(S.stream?'preview':'idle');return;}
+    await ensureCamera();
+    const c=readCfg();
+    if(S.storeMode==='download'&&c.segMin>60){c.segMin=60;el.numSeg.value='60';log('다운로드 방식은 메모리 사용을 줄이기 위해 저장 간격을 최대 60분으로 제한합니다.');}
+    const r=calcRate(c);
+    S.vbps=r.v;S.fps=c.fps;S.prec=c.prec;S.days=c.days;S.segMs=c.segMin*60000;S.mime=pickMime(S.audioOn,c.codec);
+    S.totalBytes=0;S.files=0;S.errors=0;S.segNo=0;S.lastUi=0;
+    el.sRate.textContent='측정 대기';el.sProj.textContent='측정 대기';
+    await acquireWake();
+    S.recording=true;S.startAt=Date.now();
+    await openSegment();
+    log('녹화 시작: '+(S.mime||'기본 코덱')+' · '+cv.width+'x'+cv.height+' · '+c.fps+'fps · 영상 '+(r.v/1000).toFixed(0)+'kbps · '+c.segMin+'분 단위 저장');
+    S.busy=false;setState('rec');
+  }catch(e){
+    S.recording=false;S.busy=false;releaseWake();
+    for(const s of S.active){try{if(s.rec.state!=='inactive')s.rec.stop();}catch(_){}}
+    setState(S.stream?'preview':'err');note('녹화를 시작하지 못했습니다: '+explain(e),'err');
+  }
+}
+async function stopRecording(){
+  if(!S.recording||S.stopping)return;
+  S.stopping=true;S.recording=false;
+  try{
+    const t0=Date.now();while(S.rolling&&Date.now()-t0<10000)await sleep(100);
+    const segs=[...S.active];
+    segs.forEach(s=>{try{if(s.rec.state!=='inactive')s.rec.stop();}catch(_){}});
+    await Promise.race([Promise.all(segs.map(s=>s.done)),sleep(30000)]);
+    S.seg=null;S.recovering=false;
+    log('녹화 종료: 파일 '+S.files+'개, 총 '+fmtBytes(S.totalBytes)+(S.errors?' (오류 '+S.errors+'건)':''));
+  }finally{
+    await releaseWake();S.stopping=false;
+    if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});
+    try{if(screen.orientation&&screen.orientation.unlock)screen.orientation.unlock();}catch(_){}
+    setState(S.stream?'preview':'idle');
+    updateUi(Date.now());
+  }
+}
+
+/* ---------- 화면 유지 (Wake Lock) ---------- */
+async function acquireWake(){
+  S.wantWake=true;
+  if(!('wakeLock' in navigator)){if(!S.wakeWarned){S.wakeWarned=true;note('이 브라우저는 화면 유지(Wake Lock)를 지원하지 않습니다. 시스템 절전 설정을 직접 해제하세요.','warn');}return false;}
+  if(S.wakeBusy||(S.wake&&!S.wake.released))return true;
+  S.wakeBusy=true;
+  try{const wl=await navigator.wakeLock.request('screen');S.wake=wl;wl.addEventListener('release',onWakeRelease);return true;}
+  catch(e){log('화면 유지 요청 실패: '+emsg(e));return false;}
+  finally{S.wakeBusy=false;}
+}
+function onWakeRelease(){
+  if(S.wake)S.wake.removeEventListener('release',onWakeRelease);
+  S.wake=null;
+  if(S.wantWake&&document.visibilityState==='visible')setTimeout(()=>{if(S.wantWake)acquireWake();},500);
+}
+async function releaseWake(){
+  S.wantWake=false;const w=S.wake;S.wake=null;
+  if(w){w.removeEventListener('release',onWakeRelease);try{await w.release();}catch(_){}}
+}
+
+/* ---------- 화면/전체화면 ---------- */
+let lastTap=0;
+function showDim(){el.dim.hidden=false;}
+el.dim.addEventListener('click',()=>{const t=Date.now();if(t-lastTap<500)el.dim.hidden=true;lastTap=t;});
+async function tryFullscreen(){
+  const d=document.documentElement;
+  if(document.fullscreenElement||!d.requestFullscreen)return;
+  try{await d.requestFullscreen({navigationUI:'hide'});
+    if(IS_MOBILE&&screen.orientation&&screen.orientation.lock){try{await screen.orientation.lock(screen.orientation.type.indexOf('portrait')===0?'portrait':'landscape');}catch(_){}}
+  }catch(_){}
+}
+
+/* ---------- 이벤트 ---------- */
+el.btnCam.addEventListener('click',async()=>{
+  if(S.recording||S.busy)return;
+  if(S.stream){stopCamera();setState('idle');return;}
+  S.busy=true;setState(S.state);
+  try{note('','');await ensureCamera();S.busy=false;setState('preview');}
+  catch(e){S.busy=false;stopCamera();setState('err');note('카메라를 켜지 못했습니다: '+explain(e),'err');}
+});
+el.btnRec.addEventListener('click',()=>{if(IS_MOBILE)tryFullscreen();startRecording();});
+el.btnStop.addEventListener('click',()=>{stopRecording();});
+el.btnDim.addEventListener('click',showDim);
+el.btnFs.addEventListener('click',()=>{if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});else tryFullscreen();});
+el.btnPick.addEventListener('click',pickFolder);
+el.selStore.addEventListener('change',()=>{updateStoreUi();saveSettings();});
+document.getElementById('fsSet').addEventListener('input',()=>{renderCalc();});
+document.getElementById('fsSet').addEventListener('change',()=>{renderCalc();saveSettings();});
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'){if(S.wantWake)acquireWake();}
+  else if(S.recording)log('화면이 가려졌습니다. 녹화 품질이 떨어지거나 중단될 수 있습니다.');
+});
+window.addEventListener('beforeunload',ev=>{if(S.recording){ev.preventDefault();ev.returnValue='';}});
+if(navigator.mediaDevices&&navigator.mediaDevices.addEventListener)navigator.mediaDevices.addEventListener('devicechange',()=>{if(!S.recording)refreshDevices();});
+
+/* ---------- 초기화 ---------- */
+(async function init(){
+  setupStoreOptions();loadSettings();
+  const miss=[];
+  if(!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia))miss.push('카메라 접근(https 보안 연결 필요)');
+  if(typeof MediaRecorder==='undefined')miss.push('MediaRecorder');
+  if(!HTMLCanvasElement.prototype.captureStream)miss.push('canvas.captureStream');
+  if(typeof Worker==='undefined')miss.push('Web Worker');
+  setState('idle');renderCalc();updateStoreUi();
+  setInterval(()=>{el.clock.textContent=kstString(Date.now(),0,clockCache);},1000);
+  el.clock.textContent=kstString(Date.now(),0,clockCache);
+  if(miss.length){el.btnCam.disabled=true;el.btnRec.disabled=true;note('이 환경에서는 사용할 수 없습니다. 지원되지 않는 기능: '+miss.join(', ')+'. 최신 Chrome/Edge에서 https 또는 localhost로 여세요.','err');return;}
+  if(HAS_DIR){try{const h=await idbGet('dir');if(h&&h.kind==='directory'){S.dirHandle=h;el.lblDir.textContent=h.name+' (녹화 시작 시 권한 재확인)';}}catch(_){}}
+  if(!HAS_DIR&&el.selStore.value==='dir')el.selStore.value='download';
+  log('준비 완료 ('+(IS_MOBILE?'모바일':'노트북')+'용). 저장 방식: '+el.selStore.options[el.selStore.selectedIndex].text);
+})();
+})();
+</script>
+</body>
+</html>
